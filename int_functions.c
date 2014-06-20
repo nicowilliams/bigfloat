@@ -12,7 +12,7 @@
 
 /*  divide a large integer by 2.  A simple shift right operation.  */
 
-void int_div2( x)
+void bi_int_div2( x)
 BIGINT *x;
 {
 	INDEX j;
@@ -33,15 +33,15 @@ BIGINT *x;
 	Returns gcd(u, v) as large integer in w.
 */
 
-void int_gcd(u, v, w)
+void bi_int_gcd(u, v, w)
 BIGINT *u, *v, *w;
 {
 	INDEX  k, i, flag;
 	ELEMENT check, carry_bit;
 	BIGINT t, U, V;
 	
-	int_copy( u, &U);
-	int_copy( v, &V);
+	bi_int_copy( u, &U);
+	bi_int_copy( v, &V);
 	
 /*  find common powers of 2 and eliminate them */
 
@@ -53,8 +53,8 @@ BIGINT *u, *v, *w;
 	{
 	/*  increment power of 2 and divide both u and v by 2 */
 		k++;					
-		int_div2( &U);
-		int_div2( &V);
+		bi_int_div2( &U);
+		bi_int_div2( &V);
 	}
 	
 /* Now both u and v have been divided by 2^k.  
@@ -62,12 +62,12 @@ BIGINT *u, *v, *w;
 
 	if (U.hw[INTMAX] & 1)
 	{
-		int_copy( &V, &t);
+		bi_int_copy( &V, &t);
 		flag = -1;
 	}
 	else 
 	{
-		int_copy( &U, &t);
+		bi_int_copy( &U, &t);
 		flag = 1;
 	}
 	
@@ -77,18 +77,18 @@ BIGINT *u, *v, *w;
 	{
 	/* while t is even, divide by 2  */
 	
-		while ( !(t.hw[INTMAX] & 1)) int_div2( &t);  
+		while ( !(t.hw[INTMAX] & 1)) bi_int_div2( &t);  
 
 /* reset u or v to t depending on sign of flag  */
 
-		if (flag > 0) int_copy( &t, &U);
-		else int_copy( &t, &V);
+		if (flag > 0) bi_int_copy( &t, &U);
+		else bi_int_copy( &t, &V);
 /*		t = u - v;			  core reduction step, gcd remains unchanged  */
-		int_sub( &U, &V, &t);
+		bi_int_sub( &U, &V, &t);
 		if (t.hw[0] & MSB_HW)
 		{
 			flag = -1;
-			int_neg( &t);
+			bi_int_neg( &t);
 		}
 		else flag = 1;
 		check = 0;
@@ -97,7 +97,7 @@ BIGINT *u, *v, *w;
 
 	/*  reapply common powers of 2. First do words, then do bits.*/
 	
-	int_copy( &U, w);
+	bi_int_copy( &U, w);
 	while ( k > HALFSIZE )
 	{
 		for (i=0; i<INTMAX; i++) w->hw[i] = w->hw[i+1];
@@ -121,7 +121,7 @@ BIGINT *u, *v, *w;
 	Computes z = x^n mod q for x, n and q large integers.
 */
 
-void mod_exp(x, n, q, z)
+void bi_mod_exp(x, n, q, z)
 BIGINT *x, *n, *q, *z;
 {
 	BIGINT  N, Y, Z, temp, dummy;
@@ -130,10 +130,10 @@ BIGINT *x, *n, *q, *z;
 	
 /*  initialize variables  */
 
-	int_copy (n, &N);
-	int_null( &Y);
+	bi_int_copy (n, &N);
+	bi_int_null( &Y);
 	Y.hw[INTMAX] = 1;
-	int_copy (x, &Z);
+	bi_int_copy (x, &Z);
 
 /*  Main loop divides N by 2 each step.  Repeat until N = 0, and return Y as result.  */
 
@@ -147,17 +147,17 @@ BIGINT *x, *n, *q, *z;
 		if (N.hw[INTMAX] & 1) 
 		{
 			/*  Y = (Y * Z) % q;  */
-			int_mul (&Y, &Z, &temp);
-			int_div (&temp, q, &dummy, &Y);
+			bi_int_mul (&Y, &Z, &temp);
+			bi_int_div (&temp, q, &dummy, &Y);
 		}
-		int_div2( &N);					/* divide N by 2 */
+		bi_int_div2( &N);					/* divide N by 2 */
 	/*		Z = (Z * Z) % q;		  square Z  */
-		int_mul (&Z, &Z, &temp);
-		int_div( &temp, q, &dummy, &Z);
+		bi_int_mul (&Z, &Z, &temp);
+		bi_int_div( &temp, q, &dummy, &Z);
 		check = 0;
 		INTLOOP (i) check |= N.hw[i];
 	}
-	int_copy (&Y, z);
+	bi_int_copy (&Y, z);
 }
 
 /*  Inversion of numbers in a prime field is similar to solving the linear congruence
@@ -167,7 +167,7 @@ BIGINT *x, *n, *q, *z;
 	Output is x, inverse of a mod b  (ax = 1 mod b).
 */
 
-void mod_inv(a, b, x)
+void bi_mod_inv(a, b, x)
 BIGINT *a, *b, *x;
 {
 	BIGINT  m, n, p0, p1, p2, q, r, temp, dummy;
@@ -185,12 +185,12 @@ BIGINT *a, *b, *x;
 	r = m % n;
 */
 	sw = 1;
-	int_copy( b, &m);
-	int_copy( a, &n);
-	int_null ( &p0);
+	bi_int_copy( b, &m);
+	bi_int_copy( a, &n);
+	bi_int_null ( &p0);
 	p0.hw[INTMAX] = 1;
-	int_div ( &m, &n, &p1, &r);
-	int_copy ( &p1, &q);
+	bi_int_div ( &m, &n, &p1, &r);
+	bi_int_copy ( &p1, &q);
 	
 /*  main loop, compute continued fraction  intermediates  */
 
@@ -199,22 +199,22 @@ BIGINT *a, *b, *x;
 	while (check)
 	{
 		sw = -sw;
-		int_copy( &n, &m);
-		int_copy( &r, &n);
-		int_div( &m, &n, &q, &r);
+		bi_int_copy( &n, &m);
+		bi_int_copy( &r, &n);
+		bi_int_div( &m, &n, &q, &r);
  /*		p2 = (q * p1 + p0) % b;   core operation of routine  */
- 		int_mul( &q, &p1, &temp);
- 		int_add( &temp, &p0, &temp);
- 		int_div( &temp, b, &dummy, &p2);
- 		int_copy( &p1, &p0);
- 		int_copy( &p2, &p1);
+ 		bi_int_mul( &q, &p1, &temp);
+ 		bi_int_add( &temp, &p0, &temp);
+ 		bi_int_div( &temp, b, &dummy, &p2);
+ 		bi_int_copy( &p1, &p0);
+ 		bi_int_copy( &p2, &p1);
 		check = 0;
 		INTLOOP (i) check |= r.hw[i];
 	}
 	
 /*  sw keeps track of sign.  If sw < 0, add modulus to result */
 
-	if (sw < 0) int_sub( b, &p0, x);
-	else int_copy( &p0, x);
+	if (sw < 0) bi_int_sub( b, &p0, x);
+	else bi_int_copy( &p0, x);
 }
 

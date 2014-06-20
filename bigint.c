@@ -12,7 +12,7 @@ Toolbox" in Embedded Systems Programming magazine from Dec. 1996 thru Sept. 1997
 
 /*  clear all bits in a large integer storage block.  */
 
-void int_null( a)
+void bi_int_null( a)
 BIGINT *a;
 {
 	INDEX i;
@@ -22,7 +22,7 @@ BIGINT *a;
 
 /*  copy one BIGINT block to another  */
 
-void int_copy( a, b)
+void bi_int_copy( a, b)
 BIGINT *a, *b;
 {
 	INDEX i;
@@ -35,13 +35,13 @@ BIGINT *a, *b;
 	to accomodate multiplication (once!).
 */
 
-void field_to_int( a, b)
+void bi_field_to_int( a, b)
 FIELD2N *a;
 BIGINT *b;
 {
 	INDEX	i, j;
 	
-	int_null( b);
+	bi_int_null( b);
 	for (i=NUMWORD; i>=0; i--)
 	{
 		j = INTMAX - ((NUMWORD - i)<<1);
@@ -53,7 +53,7 @@ BIGINT *b;
 
 /*  Pack a BIGINT variable back into a FIELD2N size one.  */
 
-void int_to_field( a, b)
+void bi_int_to_field( a, b)
 BIGINT *a;
 FIELD2N *b;
 {
@@ -68,7 +68,7 @@ FIELD2N *b;
 
 /*  Negate a BIGINT in place.  Each half word is complemented, then we add 1  */
 
-void int_neg( a)
+void bi_int_neg( a)
 BIGINT *a;
 {
 	INDEX i;
@@ -86,7 +86,7 @@ BIGINT *a;
 	Unlike the polynomial or ONB math, c can be one of a or b
 */
 
-void int_add( a, b, c)
+void bi_int_add( a, b, c)
 BIGINT *a, *b, *c;
 {
 	INDEX i;
@@ -105,14 +105,14 @@ BIGINT *a, *b, *c;
 	as in addition, c can point to a or b and still works
 */
 
-void int_sub( a, b, c)
+void bi_int_sub( a, b, c)
 BIGINT *a, *b, *c;
 {
 	BIGINT negb;
 	
-	int_copy( b, &negb);
-	int_neg( &negb);
-	int_add( a, &negb, c);
+	bi_int_copy( b, &negb);
+	bi_int_neg( &negb);
+	bi_int_add( a, &negb, c);
 }
 
 /*  multiply two BIGINTs to get a third.
@@ -123,19 +123,19 @@ BIGINT *a, *b, *c;
 	location.
 */
 
-void int_mul( a, b, c)
+void bi_int_mul( a, b, c)
 BIGINT *a, *b, *c;
 {
 	ELEMENT		ea, eb, mul;
 	INDEX		i, j, k;
 	BIGINT		sum;
 	
-	int_null(c);
+	bi_int_null(c);
 	
 	for ( i = INTMAX; i > INTMAX/2; i--)
 	{
 		ea = a->hw[i];
-		int_null( &sum);
+		bi_int_null( &sum);
 		for ( j = INTMAX; j > INTMAX/2; j--)
 		{
 			eb = b->hw[j];
@@ -144,7 +144,7 @@ BIGINT *a, *b, *c;
 			sum.hw[k] = mul & LOMASK;
 			sum.hw[k-1] = mul >> HALFSIZE;
 		}
-		int_add( &sum, c, c);
+		bi_int_add( &sum, c, c);
 	}
 }
 
@@ -155,7 +155,7 @@ BIGINT *a, *b, *c;
 	conditions return zero results.
 */
 
-void int_div( top, bottom, quotient, remainder)
+void bi_int_div( top, bottom, quotient, remainder)
 BIGINT *top, *bottom, *quotient, *remainder;
 {
 	BIGINT d, e;
@@ -165,8 +165,8 @@ BIGINT *top, *bottom, *quotient, *remainder;
 /*  first step, initialize counters to most significant
 	bit position in top and bottom.
 */
-	int_copy( top, &d);
-	int_copy( bottom, &e);
+	bi_int_copy( top, &d);
+	bi_int_copy( bottom, &e);
 	l = (INTMAX + 1) * HALFSIZE;
 	for( i=0; i<=INTMAX; i++)
 	{
@@ -208,13 +208,13 @@ BIGINT *top, *bottom, *quotient, *remainder;
 */
 	if (!m)			/*  x/1 = x */
 	{
-		int_copy( top, quotient);
-		int_null( remainder);
+		bi_int_copy( top, quotient);
+		bi_int_null( remainder);
 	}
 	if (!l | (l<m))			/*  1/x = 0 */
 	{
-		int_null( quotient);
-		int_copy( bottom, remainder);
+		bi_int_null( quotient);
+		bi_int_copy( bottom, remainder);
 	}
 
 /*  next step, shift bottom over to align msb with top msb  */
@@ -245,7 +245,7 @@ BIGINT *top, *bottom, *quotient, *remainder;
 	remainder is left.
 */
 
-	int_null( quotient);
+	bi_int_null( quotient);
 	while ( n>=0)
 	{
 		i = INTMAX - l/HALFSIZE;
@@ -253,7 +253,7 @@ BIGINT *top, *bottom, *quotient, *remainder;
 		while ( (d.hw[i] == e.hw[i]) && ( i<INTMAX) ) i++;
 		if ( d.hw[i] >= e.hw[i] )
 		{
-			int_sub( &d, &e, &d);
+			bi_int_sub( &d, &e, &d);
 			mask = 1L << ( n%HALFSIZE );
 			quotient->hw[j] |= mask;
 		}
@@ -266,7 +266,7 @@ BIGINT *top, *bottom, *quotient, *remainder;
 		n--;
 		l--;
 	}
-	int_copy ( &d, remainder);
+	bi_int_copy ( &d, remainder);
 }
 
 /*  Convert ascii string of decimal digits into BIGINT binary.
@@ -274,7 +274,7 @@ BIGINT *top, *bottom, *quotient, *remainder;
 	so watch out for input errors!
 */
 
-void ascii_to_bigint( instring, outhex)
+void bi_ascii_to_bigint( instring, outhex)
 char *instring;
 BIGINT *outhex;
 {
@@ -282,17 +282,17 @@ BIGINT *outhex;
 	BIGINT	ten, digit, temp;
 	INDEX	i=0;
 	
-	int_null( &ten);		/* create decimal multiplier */
+	bi_int_null( &ten);		/* create decimal multiplier */
 	ten.hw[INTMAX] = 0xA;
-	int_null( &digit);
-	int_null( outhex);
+	bi_int_null( &digit);
+	bi_int_null( outhex);
 	
 	while (ch = *instring++)
 	{
 		digit.hw[INTMAX] = ch & 0xF;
-		int_mul( outhex, &ten, &temp);
+		bi_int_mul( outhex, &ten, &temp);
 		if (digit.hw[INTMAX] > 9) continue;
-		int_add( &temp, &digit, outhex);
+		bi_int_add( &temp, &digit, outhex);
 	}
 }
 
@@ -303,7 +303,7 @@ BIGINT *outhex;
 	fills destination string.
 */
 
-void bigint_to_ascii( inhex, outstring)
+void bi_bigint_to_ascii( inhex, outstring)
 BIGINT *inhex;
 char *outstring;
 {
@@ -311,8 +311,8 @@ char *outstring;
 	ELEMENT	check;
 	INDEX	i;
 
-	int_copy( inhex, &top);
-	int_null( &ten);		/*  create constant 10 */
+	bi_int_copy( inhex, &top);
+	bi_int_null( &ten);		/*  create constant 10 */
 	ten.hw[INTMAX] = 0xA;
 	for (i=0; i<MAXSTRING; i++) *outstring++ = ' ';  /*  blank fill and null string */
 	outstring--;
@@ -321,11 +321,11 @@ char *outstring;
 	check = 1;
 	while (check)
 	{
-		int_div( &top, &ten, &quotient, &remainder);
+		bi_int_div( &top, &ten, &quotient, &remainder);
 		*outstring-- = remainder.hw[INTMAX] | '0';
 		check = 0;
 		INTLOOP(i) check |= quotient.hw[i];
-		int_copy( &quotient, &top);
+		bi_int_copy( &quotient, &top);
 	}
 }
 	
