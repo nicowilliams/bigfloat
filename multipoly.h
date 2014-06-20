@@ -23,11 +23,11 @@ typedef struct
 
 #define	MAXCHEB		54
 
-int get_space(MULTIPOLY *newpoly);
-void multi_copy( ELEMENT length, FLOAT *source, FLOAT *destination);
-void crunch_ram();
-int multi_dup( MULTIPOLY from,  MULTIPOLY *to);
-ELEMENT zero_check( FLOAT *z);
+int mbf_get_space(MULTIPOLY *newpoly);
+void mbf_multi_copy( ELEMENT length, FLOAT *source, FLOAT *destination);
+void mbf_crunch_ram();
+int mbf_multi_dup( MULTIPOLY from,  MULTIPOLY *to);
+ELEMENT mbf_zero_check( FLOAT *z);
 
 /*int multi_add( MULTIPOLY A, MULTIPOLY B, MULTIPOLY *C);
 int multi_mul( MULTIPOLY A, MULTIPOLY B, MULTIPOLY *C);

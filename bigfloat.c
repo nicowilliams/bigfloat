@@ -10,6 +10,7 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "bigfloat.h"
 #include "multipoly.h"
 
@@ -21,7 +22,7 @@ extern FLOAT		ln2;
 
 /*  copy a floating point value from a to b  */
 
-void copy( FLOAT *a, FLOAT *b)
+void bf_copy( FLOAT *a, FLOAT *b)
 {
 	int i;
 	
@@ -31,13 +32,13 @@ void copy( FLOAT *a, FLOAT *b)
 
 /* copy a complex value from a to b  */
 
-void copy_cmplx( COMPLEX *a, COMPLEX *b)
+void bf_copy_cmplx( COMPLEX *a, COMPLEX *b)
 {
-	copy( &a->real, &b->real);
-	copy( &a->imag, &b->imag);
+	bf_copy( &a->real, &b->real);
+	bf_copy( &a->imag, &b->imag);
 }
 
-void null( FLOAT *a)
+void bf_null( FLOAT *a)
 {
 	int i;
 	
@@ -47,7 +48,7 @@ void null( FLOAT *a)
 
 /*  negate a value in place  */
 
-void negate( FLOAT *a)
+void bf_negate( FLOAT *a)
 {
 	int i;
 	unsigned long long int carry;
@@ -72,7 +73,7 @@ void negate( FLOAT *a)
 	exponent has +/- 2^31 range, on underflow or overflow of exponent
 	you ought to flag an error.
 */
-void normal(  FLOAT *x)
+void bf_normal(  FLOAT *x)
 {
 	int	i, j, signflag, upshift, downshift;
 	long	xpnt;
@@ -82,7 +83,7 @@ void normal(  FLOAT *x)
 	xpnt = x->expnt;
 	if( x->mntsa.e[MS_MNTSA] & SIGN_BIT)
 	{
-		negate(x);
+		bf_negate(x);
 		signflag = 1;
 	}
 	for( i=MS_MNTSA; i>=0; i--)  if ( x->mntsa.e[i]) break;
@@ -144,7 +145,7 @@ void normal(  FLOAT *x)
 	xpnt -= upshift;
 normlrtn:
 	x->expnt = xpnt;
-	if (signflag) negate (x);
+	if (signflag) bf_negate (x);
 }
 
 /*  compare magnitude of 2 FLOATs.  
@@ -154,7 +155,7 @@ normlrtn:
 		  0 if |a| = |b|
 */
 
-int compare( FLOAT *a, FLOAT *b)
+int bf_compare( FLOAT *a, FLOAT *b)
 {
 	FLOAT mya, myb;
 	int i;
@@ -166,12 +167,12 @@ int compare( FLOAT *a, FLOAT *b)
 
 /*  exponents match, check mantissas  */
 
-	copy( a, &mya);
-	copy( b, &myb);
+	bf_copy( a, &mya);
+	bf_copy( b, &myb);
 	if( mya.mntsa.e[MS_MNTSA] & SIGN_BIT)
-		negate( &mya);
+		bf_negate( &mya);
 	if( myb.mntsa.e[MS_MNTSA] & SIGN_BIT)
-		negate( &myb);
+		bf_negate( &myb);
 	for( i=MS_MNTSA; i >= 0; i--)
 	{
 		if( mya.mntsa.e[i] > myb.mntsa.e[i]) return 1;
@@ -183,7 +184,7 @@ int compare( FLOAT *a, FLOAT *b)
 /*  add two floating point numbers a + b = c.
 	Makes local copies of data, so any pointers can be the same.
 */
-void add( FLOAT *a, FLOAT *b, FLOAT *c)
+void bf_add( FLOAT *a, FLOAT *b, FLOAT *c)
 {
 	FLOAT big, small, result;
 	int	i, uper, lower, bigsign, resultsign, smallsign;
@@ -192,45 +193,45 @@ void add( FLOAT *a, FLOAT *b, FLOAT *c)
 
 /*  eliminate work if either input is zero  */
 
-	if (iszero (a)) 
+	if (bf_iszero (a)) 
 	{
-		copy (b, c);
+		bf_copy (b, c);
 		return;
 	}
-	if (iszero( b))
+	if (bf_iszero( b))
 	{
-		copy( a, c);
+		bf_copy( a, c);
 		return;
 	}
 	
 /* easy to deal with one big and one small, so copy accordingly 
 	but equal magnitude and opposite signs causes problems */
 
-	i = compare( a, b);
+	i = bf_compare( a, b);
 	if( i == 0)		/*  a = b, very special case  */
 	{
 		if( a->mntsa.e[MS_MNTSA] ^ b->mntsa.e[MS_MNTSA])
 		{
-			null( c);
+			bf_null( c);
 			return;
 		}
-		copy( a, c);
+		bf_copy( a, c);
 		c->expnt++;
 		return;
 	}
 	if (i > 0)
 	{
-		copy( a, &big);
-		copy( b, &small);
+		bf_copy( a, &big);
+		bf_copy( b, &small);
 	}
 	else
 	{
-		copy( b, &big);
-		copy( a, &small);
+		bf_copy( b, &big);
+		bf_copy( a, &small);
 	}
  	if ( (big.expnt - small.expnt) >= (32*MNTSA_SIZE) )
 	{
-		copy( &big, c);
+		bf_copy( &big, c);
 		return;
 	}
 	bigsign = big.mntsa.e[MS_MNTSA] & SIGN_BIT ? 1 : 0;
@@ -319,32 +320,32 @@ void add( FLOAT *a, FLOAT *b, FLOAT *c)
 			himask = msb ? SIGN_BIT : 0;
 		}
 	}
-	normal( &result);
-	copy( &result, c);
+	bf_normal( &result);
+	bf_copy( &result, c);
 }
 
 /*  because it's useful  c = a - b  */
 
-void subtract( FLOAT *a, FLOAT *b, FLOAT *c)
+void bf_subtract( FLOAT *a, FLOAT *b, FLOAT *c)
 {
 	FLOAT	myb;
 	
-	copy( b, &myb);
-	negate( &myb);
-	add( a, &myb, c);
+	bf_copy( b, &myb);
+	bf_negate( &myb);
+	bf_add( a, &myb, c);
 }
 
 /*  round a float to an integer.  add 1/2 and clear fractional bits.  */
 
-void round( FLOAT *a, FLOAT *b)
+void bf_round( FLOAT *a, FLOAT *b)
 {
 	FLOAT  half;
 	int i;
 	unsigned long mask;
 	
-	null( &half);
+	bf_null( &half);
 	half.mntsa.e[MS_MNTSA] = 0x40000000;
-	add( a, &half, b);
+	bf_add( a, &half, b);
 	i = MS_MNTSA - (b->expnt / 32);
 	mask = ~0 << (31 - b->expnt % 32);
 	b->mntsa.e[i] &= mask;
@@ -362,7 +363,7 @@ void round( FLOAT *a, FLOAT *b)
 	Returns c = a * b, 
 */
 
-void multiply( FLOAT *a, FLOAT *b, FLOAT *c)
+void bf_multiply( FLOAT *a, FLOAT *b, FLOAT *c)
 {
 	int	i, j, k, signflag;
 	FLOAT	mya, myb;
@@ -370,23 +371,23 @@ void multiply( FLOAT *a, FLOAT *b, FLOAT *c)
 
 /*  figure out sign of result and use unsigned algorithm  */
 
-	copy( a, &mya);
-	copy( b, &myb);
+	bf_copy( a, &mya);
+	bf_copy( b, &myb);
 	signflag = 0;
 	if( mya.mntsa.e[MS_MNTSA] & SIGN_BIT)
 	{
 		signflag = 1;
-		negate( &mya);
+		bf_negate( &mya);
 	}
 	if ( myb.mntsa.e[MS_MNTSA] & SIGN_BIT)
 	{
 		signflag ^= 1;
-		negate( &myb);
+		bf_negate( &myb);
 	}
 
 /*  compute unnormalized exponent  */
 
-	null( c);
+	bf_null( c);
 	c->expnt = mya.expnt + myb.expnt + 1;
 
 /*  use longs and multiply up long longs then sum to 
@@ -426,8 +427,8 @@ void multiply( FLOAT *a, FLOAT *b, FLOAT *c)
 			c->mntsa.e[i] =  (dst >> 32) & 0xffffffffLL;
 		}
 	}
-	normal( c);
-	if (signflag) negate( c);
+	bf_normal( c);
+	if (signflag) bf_negate( c);
 }
 
 /*  divide FLOATS
@@ -440,7 +441,7 @@ void multiply( FLOAT *a, FLOAT *b, FLOAT *c)
 	1 otherwise.
 */
 
-int reciprical ( FLOAT *b, FLOAT *c)
+int bf_reciprical ( FLOAT *b, FLOAT *c)
 {
 	FLOAT	myb, x0, x1, two;
 	unsigned long long int utop;
@@ -450,12 +451,12 @@ int reciprical ( FLOAT *b, FLOAT *c)
 /*  copy bottom and make positive  */
 
 	signflag = 0;
-	copy( b, &myb);
+	bf_copy( b, &myb);
 	exponent = myb.expnt;
 	if( myb.mntsa.e[MS_MNTSA] & SIGN_BIT)
 	{
 		signflag = 1;
-		negate( &myb);
+		bf_negate( &myb);
 	}
 
 /*  check for divide by zero  */
@@ -473,7 +474,7 @@ int reciprical ( FLOAT *b, FLOAT *c)
 
 /*  create constant 2  */
 
-	null( &two);
+	bf_null( &two);
 	two.mntsa.e[MS_MNTSA] = 0X40000000;
 	two.expnt = 2;
 
@@ -481,7 +482,7 @@ int reciprical ( FLOAT *b, FLOAT *c)
 	guess.  Guess will be normalzied automaticly
 	because it started that way.
 */
-	null( &x0);
+	bf_null( &x0);
 	utop = 0x4000000000000000 / 
 		(unsigned long long) myb.mntsa.e[MS_MNTSA];
 
@@ -496,26 +497,26 @@ int reciprical ( FLOAT *b, FLOAT *c)
 
 	for( i=0; i<DIVISION_LOOPS; i++)
 	{
-		multiply( &myb, &x0, &x1);
-		subtract( &two, &x1, &x1);
-		multiply( &x0, &x1, &x0);
+		bf_multiply( &myb, &x0, &x1);
+		bf_subtract( &two, &x1, &x1);
+		bf_multiply( &x0, &x1, &x0);
 	}
 
 /*  adjust exponent and check sign flag of result */
 
-	copy( &x0, c);
-	if (signflag) negate(c);
+	bf_copy( &x0, c);
+	if (signflag) bf_negate(c);
 	return 1;
 }
 
 /*  Divide is pretty trivial with reciprical  */
 
-int divide( FLOAT *a, FLOAT *b, FLOAT *c)
+int bf_divide( FLOAT *a, FLOAT *b, FLOAT *c)
 {
 	FLOAT bottom;
 	
-	if ( !reciprical( b, &bottom)) return 0;
-	multiply( a, &bottom, c);
+	if ( !bf_reciprical( b, &bottom)) return 0;
+	bf_multiply( a, &bottom, c);
 }
 
 /*  Square root function.  Start with constants.  Taken 
@@ -526,7 +527,7 @@ int divide( FLOAT *a, FLOAT *b, FLOAT *c)
 
 static FLOAT p0, p1, p2, q0, q1;
 
-void init_float()
+void bf_init_float()
 {
 	int			degree;
 	MULTIPOLY	chebary[ MAXCHEB+1];
@@ -589,19 +590,19 @@ void init_float()
 
 /*  initialize constants for exp and cosine expansions  */
 	
-	degree = gen_chebyshev( chebary, MAXCHEB);
+	degree = bf_gen_chebyshev( chebary, MAXCHEB);
 	if( degree < MAXCHEB)
 	{
 		printf("Max degree %d obtained for chebyshev array. \n", degree);
 		exit(0);
 	}
-	degree = calc_2x_coef( chebary, 44, &twoxcoef);
+	degree = bf_calc_2x_coef( chebary, 44, &twoxcoef);
 	if( degree < 44)
 	{
 		printf("Maxdegree %d obtained for 2^x coefficints. \n", degree);
 		exit(0);
 	}
-	degree = calc_cos_coef( chebary, MAXCHEB, &coscoef);
+	degree = bf_calc_cos_coef( chebary, MAXCHEB, &coscoef);
 	if( degree < MAXCHEB)
 	{
 		printf("Maxdegree %d obtained for cos coefficints. \n", degree);
@@ -618,7 +619,7 @@ void init_float()
 	pg 90
 */
 
-void square_root( FLOAT *in, FLOAT *out)
+void bf_square_root( FLOAT *in, FLOAT *out)
 {
 	FLOAT x, top, bottom, y;
 	int i;
@@ -626,14 +627,14 @@ void square_root( FLOAT *in, FLOAT *out)
 	char debug[256];
 	int j;
 	
-	copy( in, &x);
+	bf_copy( in, &x);
 
 /*  check sign and range of input.
 	convert to fraction in range 0.25 < x < 1
 	and adjust exponent accordingly.
 */
 	if( in->mntsa.e[MS_MNTSA] & SIGN_BIT)
-		negate( &x);
+		bf_negate( &x);
 	if( x.expnt & 1)
 	{
 		out->expnt = (x.expnt + 1)/2;
@@ -650,20 +651,20 @@ void square_root( FLOAT *in, FLOAT *out)
 	so 5 steps gives 500 bits.  Adjust loop as needed.
 */
 
-	multiply( &p2, &x, &top);
-	add( &p1, &top, &top);
-	multiply ( &top, &x, &top);
-	add ( &p0, &top, &top);
+	bf_multiply( &p2, &x, &top);
+	bf_add( &p1, &top, &top);
+	bf_multiply ( &top, &x, &top);
+	bf_add ( &p0, &top, &top);
 	
-	add( &x, &q1, &bottom);
-	multiply(  &x, &bottom, &bottom);
-	add( &q0, &bottom, &bottom);
+	bf_add( &x, &q1, &bottom);
+	bf_multiply(  &x, &bottom, &bottom);
+	bf_add( &q0, &bottom, &bottom);
 	
-	divide( &top, &bottom, &y);
+	bf_divide( &top, &bottom, &y);
 	for( i=0; i<5 ; i++)
 	{
-		divide( &x, &y, &top);
-		add( &y, &top, &y);
+		bf_divide( &x, &y, &top);
+		bf_add( &y, &top, &y);
 		y.expnt--;
 	}
 
@@ -674,11 +675,11 @@ void square_root( FLOAT *in, FLOAT *out)
 
 /*  convert signed 32 bit integer to a float  */
 
-void int_to_float( int num, FLOAT *x)
+void bf_int_to_float( int num, FLOAT *x)
 {
-	null( x);
+	bf_null( x);
 	x->expnt = 31;
 	x->mntsa.e[MS_MNTSA] = num;
-	normal( x);
+	bf_normal( x);
 }
 

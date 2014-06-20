@@ -8,65 +8,65 @@
 
 /*  set a float to a constant 1  */
 
-void one( FLOAT *x)
+void bf_one( FLOAT *x)
 {
-	null( x);
+	bf_null( x);
 	x->expnt = 1;
 	x->mntsa.e[MS_MNTSA] = 0x40000000;
 }
 
 /*  zero out a complex storage location  */
 
-void null_cmplx( COMPLEX *x)
+void bf_null_cmplx( COMPLEX *x)
 {
-	null( & x->real);
-	null( & x->imag);
+	bf_null( & x->real);
+	bf_null( & x->imag);
 }
 
 /*  add two complex numbers.
 	c = a + b 
 */
-void add_cmplx( COMPLEX *a, COMPLEX *b, COMPLEX *c)
+void bf_add_cmplx( COMPLEX *a, COMPLEX *b, COMPLEX *c)
 {
 	COMPLEX mya, myb;
 
-	copy_cmplx( a, &mya);
-	copy_cmplx( b, &myb);
+	bf_copy_cmplx( a, &mya);
+	bf_copy_cmplx( b, &myb);
 	
-	add( &mya.real, &myb.real, &c->real);
-	add( &mya.imag, &myb.imag, &c->imag);
+	bf_add( &mya.real, &myb.real, &c->real);
+	bf_add( &mya.imag, &myb.imag, &c->imag);
 }
 
 /*  subtract two complex numbers
 	c = a - b
 */
-void subtract_cmplx( COMPLEX *a, COMPLEX *b, COMPLEX *c)
+void bf_subtract_cmplx( COMPLEX *a, COMPLEX *b, COMPLEX *c)
 {
 	COMPLEX myb;
 
-	copy_cmplx( b, &myb);
-	negate( &myb.real);
-	negate( &myb.imag);
-	add_cmplx( a, &myb, c);
+	bf_copy_cmplx( b, &myb);
+	bf_negate( &myb.real);
+	bf_negate( &myb.imag);
+	bf_add_cmplx( a, &myb, c);
 }
 
 /*  multiply two complex numbers.
 
 	c = (a.real * b.real - a.imag * b.imag) + i(a.imag * b.real + a.real * b.imag)
 */
-void multiply_cmplx(  COMPLEX *a, COMPLEX *b, COMPLEX *c)
+void bf_multiply_cmplx(  COMPLEX *a, COMPLEX *b, COMPLEX *c)
 {
 	COMPLEX mya, myb;
 	FLOAT	temp1, temp2;
 
-	copy_cmplx( a, &mya);
-	copy_cmplx( b, &myb);
-	multiply( &mya.real, &myb.real, &temp1);
-	multiply( &mya.imag, &myb.imag, &temp2);
-	subtract( &temp1, &temp2, &c->real);
-	multiply( &mya.real, &myb.imag, &temp1);
-	multiply( &mya.imag, &myb.real, &temp2);
-	add( &temp1, &temp2, &c->imag);
+	bf_copy_cmplx( a, &mya);
+	bf_copy_cmplx( b, &myb);
+	bf_multiply( &mya.real, &myb.real, &temp1);
+	bf_multiply( &mya.imag, &myb.imag, &temp2);
+	bf_subtract( &temp1, &temp2, &c->real);
+	bf_multiply( &mya.real, &myb.imag, &temp1);
+	bf_multiply( &mya.imag, &myb.real, &temp2);
+	bf_add( &temp1, &temp2, &c->imag);
 }
 
 /*  divide two complex numbers.
@@ -78,19 +78,19 @@ void multiply_cmplx(  COMPLEX *a, COMPLEX *b, COMPLEX *c)
 	
 	returns 1 if b != 0, 0 if |b| = 0
 */
-int divide_cmplx( COMPLEX *a, COMPLEX *b, COMPLEX *c)
+int bf_divide_cmplx( COMPLEX *a, COMPLEX *b, COMPLEX *c)
 {
 	FLOAT	mag1, mag2;
 	COMPLEX	myb;
 	
-	copy_cmplx( b, &myb);
-	multiply( &myb.real, &myb.real, &mag1);
-	multiply( &myb.imag, &myb.imag, &mag2);
-	add( &mag1, &mag2, &mag1);
-	negate( &myb.imag);
-	multiply_cmplx( a, &myb, c);
-	if( ! divide( &c->real, &mag1, &c->real)) return 0;
-	divide( &c->imag, &mag1, &c->imag);
+	bf_copy_cmplx( b, &myb);
+	bf_multiply( &myb.real, &myb.real, &mag1);
+	bf_multiply( &myb.imag, &myb.imag, &mag2);
+	bf_add( &mag1, &mag2, &mag1);
+	bf_negate( &myb.imag);
+	bf_multiply_cmplx( a, &myb, c);
+	if( ! bf_divide( &c->real, &mag1, &c->real)) return 0;
+	bf_divide( &c->imag, &mag1, &c->imag);
 	return 1;
 }
 
@@ -99,7 +99,7 @@ int divide_cmplx( COMPLEX *a, COMPLEX *b, COMPLEX *c)
 	returns 1 if ok, 0 if x = 0 and k < 0
 */
 
-int intpwr_cmplx( COMPLEX *x, int k, COMPLEX  *y)
+int bf_intpwr_cmplx( COMPLEX *x, int k, COMPLEX  *y)
 {
 	int signflag, n;
 	COMPLEX z, t;
@@ -113,7 +113,7 @@ int intpwr_cmplx( COMPLEX *x, int k, COMPLEX  *y)
 	
 /*  initialize Knuth's algorithm A pg 442 semi-numerical algorithms  */
 
-	copy_cmplx( x, &z);
+	bf_copy_cmplx( x, &z);
 	if ( k < 0 )
 	{
 		signflag = 1;
@@ -124,21 +124,21 @@ int intpwr_cmplx( COMPLEX *x, int k, COMPLEX  *y)
 		signflag = 0;
 		n = k;
 	}
-	null_cmplx( &t);
-	one( &t.real);
+	bf_null_cmplx( &t);
+	bf_one( &t.real);
 	while (n)
 	{
-		if ( n & 1 ) multiply_cmplx( &t, &z, &t);
-		multiply_cmplx( &z, &z, &z);
+		if ( n & 1 ) bf_multiply_cmplx( &t, &z, &t);
+		bf_multiply_cmplx( &z, &z, &z);
 		n >>= 1;
 	}
 	if ( signflag)
 	{
-		null_cmplx( &z);
-		one( &z.real);
-		return divide_cmplx( &z, &t, y);
+		bf_null_cmplx( &z);
+		bf_one( &z.real);
+		return bf_divide_cmplx( &z, &t, y);
 	}
-	copy_cmplx( &t, y);
+	bf_copy_cmplx( &t, y);
 	return 1;
 }
 
@@ -146,14 +146,14 @@ int intpwr_cmplx( COMPLEX *x, int k, COMPLEX  *y)
 	FLOAT result.
 */
 
-void magnitude_cmplx( COMPLEX *x, FLOAT *m)
+void bf_magnitude_cmplx( COMPLEX *x, FLOAT *m)
 {
 	FLOAT x2, y2;
 	
-	multiply( &x->real, &x->real, &x2);
-	multiply( &x->imag, &x->imag, &y2);
-	add( &x2, &y2, m);
-	square_root( m, m);
+	bf_multiply( &x->real, &x->real, &x2);
+	bf_multiply( &x->imag, &x->imag, &y2);
+	bf_add( &x2, &y2, m);
+	bf_square_root( m, m);
 }
 
 /*  compute exp(z) for z complex.
@@ -163,24 +163,24 @@ void magnitude_cmplx( COMPLEX *x, FLOAT *m)
 	works in place.
 */
 
-int exp_cmplx( COMPLEX *z, COMPLEX *e)
+int bf_exp_cmplx( COMPLEX *z, COMPLEX *e)
 {
 	FLOAT	x, y, xp, cy, sy;
 	
-	copy( &z->real, &x);
-	copy( &z->imag, &y);
-	if( !exp( &x, &xp) )
+	bf_copy( &z->real, &x);
+	bf_copy( &z->imag, &y);
+	if( !bf_exp( &x, &xp) )
 	{
-		copy( &xp, &e->real);
-		null( &e->imag);
+		bf_copy( &xp, &e->real);
+		bf_null( &e->imag);
 		return 0;
 	}
-	cosine( &y, &cy);
+	bf_cosine( &y, &cy);
 //	printfloat("cos(y)=", &cy);
-	sine( &y, &sy);
+	bf_sine( &y, &sy);
 //	printfloat("sin(y)=", &sy);
-	multiply( &xp, &cy, &e->real);
+	bf_multiply( &xp, &cy, &e->real);
 //	printfloat("exp(x)=", &xp);
-	multiply( &xp, &sy, &e->imag);
+	bf_multiply( &xp, &sy, &e->imag);
 	return 1;
 }

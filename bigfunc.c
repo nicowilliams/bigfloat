@@ -10,10 +10,11 @@
 *																*
 ****************************************************************/
 
+#include <stdio.h>
 #include "bigfloat.h"
 #include "multipoly.h"
 
-void split( FLOAT *x, FLOAT *intprt, FLOAT *frac);
+void bf_split( FLOAT *x, FLOAT *intprt, FLOAT *frac);
 
 extern RAMDATA ram_block[];
 
@@ -26,33 +27,33 @@ FLOAT		ln2;			/*  ln(2)	*/
 	Uses formula arcsin(1/2) = pi/6 = pi/2 - 1 - sum(
 		1*3*5*...*(2k-1))/(2^3k (2k+1) k!)
 */
-void calcpi( FLOAT *pi)
+void bf_calcpi( FLOAT *pi)
 {
 	FLOAT tn, constant;
 	int i;
 	
-	null( pi);
-	int_to_float( 1, &tn);
+	bf_null( pi);
+	bf_int_to_float( 1, &tn);
 	tn.expnt = -2;
-	int_to_float( 3, &constant);
-	divide( &tn, &constant, &tn);
-	add( pi, &tn, pi);
+	bf_int_to_float( 3, &constant);
+	bf_divide( &tn, &constant, &tn);
+	bf_add( pi, &tn, pi);
 	for( i=2; i<123; i++)
 	{
-		int_to_float( 2*i-1, &constant);
-		multiply(&constant, &constant, &constant);
-		multiply( &constant, &tn, &tn);
-		int_to_float( 2*i+1, &constant);
-		divide( &tn, &constant, &tn);
-		int_to_float( i, &constant);
-		divide( &tn, &constant, &tn);
+		bf_int_to_float( 2*i-1, &constant);
+		bf_multiply(&constant, &constant, &constant);
+		bf_multiply( &constant, &tn, &tn);
+		bf_int_to_float( 2*i+1, &constant);
+		bf_divide( &tn, &constant, &tn);
+		bf_int_to_float( i, &constant);
+		bf_divide( &tn, &constant, &tn);
 		tn.expnt -= 3;
-		add( &tn, pi, pi);
+		bf_add( &tn, pi, pi);
 	}
-	int_to_float( 1, &constant);
-	add( &constant, pi, pi);
-	int_to_float( 3, &constant);
-	multiply( &constant, pi, pi);
+	bf_int_to_float( 1, &constant);
+	bf_add( &constant, pi, pi);
+	bf_int_to_float( 3, &constant);
+	bf_multiply( &constant, pi, pi);
 }
 
 /*  Output of above routine is:
@@ -72,27 +73,27 @@ pi.mntsa.e[] = {
 	which converges in about 70+ terms.
 */
 
-void calcln2( FLOAT *ln2)
+void bf_calcln2( FLOAT *ln2)
 {
 	int	k, epsilon, startxp;
 	FLOAT	tk, constant, nine;
 	
-	null( ln2);
-	int_to_float( 3, &constant);
-	reciprical( &constant, &tk);	// gives me t0
+	bf_null( ln2);
+	bf_int_to_float( 3, &constant);
+	bf_reciprical( &constant, &tk);	// gives me t0
 	startxp = tk.expnt;
-	multiply( &tk, &tk, &nine);	// additional 3^2k term
+	bf_multiply( &tk, &tk, &nine);	// additional 3^2k term
 	epsilon = 1;
 	k = 0;
 	
 	while( epsilon > -256)
 	{
-		add( &tk, ln2, ln2);
-		int_to_float( 2*k+1, &constant);
-		multiply( &constant, &tk, &tk);
-		int_to_float( 2*k+3, &constant);
-		divide( &tk, &constant, &tk);
-		multiply( &nine, &tk, &tk);
+		bf_add( &tk, ln2, ln2);
+		bf_int_to_float( 2*k+1, &constant);
+		bf_multiply( &constant, &tk, &tk);
+		bf_int_to_float( 2*k+3, &constant);
+		bf_divide( &tk, &constant, &tk);
+		bf_multiply( &nine, &tk, &tk);
 		epsilon = tk.expnt - startxp;
 		k++;
 	}
@@ -105,14 +106,14 @@ void calcln2( FLOAT *ln2)
 	Returns 1 if ok, 0 if x = 0 and k<0
 */
 
-int intpwr( FLOAT *x, int k, FLOAT *y)
+int bf_intpwr( FLOAT *x, int k, FLOAT *y)
 {
 	int signflag, n;
 	FLOAT z, t;
 	
 /*  initialize Knuth's algorithm A pg 442 V2  */
 
-	copy( x, &z);
+	bf_copy( x, &z);
 	if( k<0)
 	{
 		signflag = -1;
@@ -123,15 +124,15 @@ int intpwr( FLOAT *x, int k, FLOAT *y)
 		signflag = 0;
 		n = k;
 	}
-	int_to_float( 1, &t);
+	bf_int_to_float( 1, &t);
 	while( n)
 	{
-		if( n & 1) multiply( &t, &z, &t);
-		multiply( &z, &z, &z);
+		if( n & 1) bf_multiply( &t, &z, &t);
+		bf_multiply( &z, &z, &z);
 		n >>= 1;
 	}
-	if( signflag) return reciprical( &t, y);
-	copy( &t, y);
+	if( signflag) return bf_reciprical( &t, y);
+	bf_copy( &t, y);
 	return 1;
 }
 
@@ -146,27 +147,27 @@ int intpwr( FLOAT *x, int k, FLOAT *y)
 	uses |n|
 */
 
-void bessel( int type, int n, FLOAT *x, FLOAT *y)
+void bf_bessel( int type, int n, FLOAT *x, FLOAT *y)
 {
 	FLOAT	z2, z4, constant, t1, sum;
 	int		startxp, epsilon, j, k;
 	
 	if( n<0) n = -n;
-	copy( x, &z2);
+	bf_copy( x, &z2);
 	z2.expnt--;		// divide input by 2
-	multiply( &z2, &z2, &z4);		// z^2/4
-	if( type < 0) negate( &z4);
-	int_to_float( 1, &t1);
+	bf_multiply( &z2, &z2, &z4);		// z^2/4
+	if( type < 0) bf_negate( &z4);
+	bf_int_to_float( 1, &t1);
 	j = n;			// compute 1/n!
 	while( j>1)
 	{
-		int_to_float( j, &constant);
-		multiply( &constant, &t1, &t1);
+		bf_int_to_float( j, &constant);
+		bf_multiply( &constant, &t1, &t1);
 		j--;
 	}
-	reciprical( &t1, &sum);
+	bf_reciprical( &t1, &sum);
 	startxp = sum.expnt;
-	copy( &sum, &t1);
+	bf_copy( &sum, &t1);
 	
 /*  when next term exponent is 256 less than starting
 	exponent, we have more bits of accuracy.
@@ -181,16 +182,16 @@ void bessel( int type, int n, FLOAT *x, FLOAT *y)
 	{
 		j++;
 		k++;
-		int_to_float( j, &constant);
-		divide( &t1, &constant, &t1);
-		multiply( &z4, &t1, &t1);
-		int_to_float( k, &constant);
-		divide( &t1, &constant, &t1);
-		add( &t1, &sum, &sum);
+		bf_int_to_float( j, &constant);
+		bf_divide( &t1, &constant, &t1);
+		bf_multiply( &z4, &t1, &t1);
+		bf_int_to_float( k, &constant);
+		bf_divide( &t1, &constant, &t1);
+		bf_add( &t1, &sum, &sum);
 		epsilon = t1.expnt - startxp;
 	}
-	intpwr( &z2, n, &t1);
-	multiply( &t1, &sum, y);
+	bf_intpwr( &z2, n, &t1);
+	bf_multiply( &t1, &sum, y);
 }
 
 /* create table of chebyshev polynomials.
@@ -202,7 +203,7 @@ void bessel( int type, int n, FLOAT *x, FLOAT *y)
 	T(n,x) = 2xT(n-1, x) - T(n-2, x)
 */
 
-int gen_chebyshev( MULTIPOLY *chebary, int degree)
+int bf_gen_chebyshev( MULTIPOLY *chebary, int degree)
 {
 	int 		numgen;
 	FLOAT	*fptr;
@@ -211,38 +212,38 @@ int gen_chebyshev( MULTIPOLY *chebary, int degree)
 	if( degree < 0) return 0;
 		
 	twox.degree = 1;
-	if( !get_space( &twox)) return 0;
+	if( !bf_get_space( &twox)) return 0;
 	fptr = Address(twox);
-	null( fptr);
+	bf_null( fptr);
 	fptr++;
-	int_to_float( 2, fptr);
+	bf_int_to_float( 2, fptr);
 	
 	numgen = 0;
 	chebary[0].degree = 0;
-	if( !get_space( chebary))  goto chebdie;
+	if( !bf_get_space( chebary))  goto chebdie;
 	fptr = Address( chebary[0]);
-	int_to_float( 1, fptr);
+	bf_int_to_float( 1, fptr);
 	numgen++;
 	if (degree < 1) return 1;
 	chebary[1].degree = 1;
-	if( !get_space( &chebary[1])) goto chebdie;
+	if( !bf_get_space( &chebary[1])) goto chebdie;
 	fptr = Address( chebary[1]);
-	null( fptr);
+	bf_null( fptr);
 	fptr++;
-	int_to_float( 1, fptr);
+	bf_int_to_float( 1, fptr);
 	numgen++;
 	
 	while( numgen <= degree)
 	{
 		chebary[numgen].degree = numgen;
-		if( !get_space( &chebary[numgen])) break;
-		multi_mul( twox, chebary[numgen - 1], &temp);
-		multi_sub( temp, chebary[numgen - 2], &chebary[numgen]);
-		free_space( &temp);
+		if( !bf_get_space( &chebary[numgen])) break;
+		bf_multi_mul( twox, chebary[numgen - 1], &temp);
+		bf_multi_sub( temp, chebary[numgen - 2], &chebary[numgen]);
+		bf_free_space( &temp);
 		numgen++;
 	}
 chebdie:
-	free_space( &twox);
+	bf_free_space( &twox);
 	return numgen;
 }
 
@@ -257,7 +258,7 @@ chebdie:
 	actually computed.
 */
 
-int calc_2x_coef( MULTIPOLY *cheb,  int maxdegree, 
+int bf_calc_2x_coef( MULTIPOLY *cheb,  int maxdegree, 
 				MULTIPOLY *twoxcoef)
 {
 	INDEX		i, j;
@@ -266,33 +267,33 @@ int calc_2x_coef( MULTIPOLY *cheb,  int maxdegree,
 	
 	char		test[32];
 	
-	calcln2( &ln2);
+	bf_calcln2( &ln2);
 	
 	sum.degree = 0;
-	if( !get_space( &sum))
+	if( !bf_get_space( &sum))
 	{
 		printf(" no space left, calc_2x_coef \n");
 		return 0;
 	}
 	iptr = Address(sum);
-	bessel (+1, 0, &ln2, iptr);
+	bf_bessel (+1, 0, &ln2, iptr);
 	for( i=1; i<=maxdegree; i++)
 	{
-		bessel( +1, i, &ln2, &ibesl);
+		bf_bessel( +1, i, &ln2, &ibesl);
 		ibesl.expnt++;
-		multi_dup( cheb[i], &tnterm);
+		bf_multi_dup( cheb[i], &tnterm);
 		for( j = (i&1); j<=i; j += 2)
 		{
 			iptr = Address( tnterm) + j;
-			multiply( &ibesl, iptr, iptr);
+			bf_multiply( &ibesl, iptr, iptr);
 		}
-		if( !multi_add( tnterm, sum, &sum)) break;
-		free_space( &tnterm);
+		if( !bf_multi_add( tnterm, sum, &sum)) break;
+		bf_free_space( &tnterm);
 	}
-	if( i< maxdegree)  free_space( &tnterm);
+	if( i< maxdegree)  bf_free_space( &tnterm);
 	else i = maxdegree;
-	multi_dup( sum, twoxcoef);
-	free_space( &sum);
+	bf_multi_dup( sum, twoxcoef);
+	bf_free_space( &sum);
 	return (i);
 }
 
@@ -311,7 +312,7 @@ int calc_2x_coef( MULTIPOLY *cheb,  int maxdegree,
 	the polynomial.
 */
 
-int calc_cos_coef( MULTIPOLY *cheb,  int maxdegree, 
+int bf_calc_cos_coef( MULTIPOLY *cheb,  int maxdegree, 
 				MULTIPOLY *coscoef)
 {
 	INDEX		i, j, k;
@@ -320,35 +321,35 @@ int calc_cos_coef( MULTIPOLY *cheb,  int maxdegree,
 	
 	char		test[32];
 
-	calcpi( &P2);
+	bf_calcpi( &P2);
 	P2.expnt--;
 	sum.degree = 0;
-	if( !get_space( &sum))
+	if( !bf_get_space( &sum))
 	{
 		printf(" no space left, calc_cos_coef \n");
 		return 0;
 	}
 	jptr = Address(sum);
-	bessel(-1, 0, &P2, jptr);
+	bf_bessel(-1, 0, &P2, jptr);
 	for( i=1; i<=maxdegree/2; i++)
 	{
 		k = 2*i;
-		bessel( -1, k, &P2, &jbesl);
+		bf_bessel( -1, k, &P2, &jbesl);
 		jbesl.expnt++;
-		if( i&1) negate( &jbesl);
-		multi_dup( cheb[k], &tnterm);
+		if( i&1) bf_negate( &jbesl);
+		bf_multi_dup( cheb[k], &tnterm);
 		jptr = Address( tnterm);
 		for( j = 0; j<=k; j += 2)
 		{
-			multiply( &jbesl, jptr, jptr);
+			bf_multiply( &jbesl, jptr, jptr);
 			jptr += 2;
 		}
-		if( !multi_add( tnterm, sum, &sum)) break;
-		free_space( &tnterm);
+		if( !bf_multi_add( tnterm, sum, &sum)) break;
+		bf_free_space( &tnterm);
 	}
 	if( i< maxdegree/2)  
 	{
-		free_space( &tnterm);
+		bf_free_space( &tnterm);
 		i = 2*i;
 	}
 	else i = maxdegree;
@@ -357,7 +358,7 @@ int calc_cos_coef( MULTIPOLY *cheb,  int maxdegree,
 
 	j = sum.degree/2;
 	coscoef->degree = j;
-	if( !get_space(coscoef))
+	if( !bf_get_space(coscoef))
 	{
 		printf(" no space for cosine.\n");
 		return 0;
@@ -366,9 +367,9 @@ int calc_cos_coef( MULTIPOLY *cheb,  int maxdegree,
 	{
 		kptr = AddressOf( coscoef) + k;
 		jptr = Address( sum) + 2*k;
-		copy( jptr, kptr);
+		bf_copy( jptr, kptr);
 	}
-	free_space( &sum);
+	bf_free_space( &sum);
 	return (i);
 }
 
@@ -378,20 +379,20 @@ int calc_cos_coef( MULTIPOLY *cheb,  int maxdegree,
 	y can equal x
 */
 
-void polyeval( MULTIPOLY coef, FLOAT *x, FLOAT *y)
+void bf_polyeval( MULTIPOLY coef, FLOAT *x, FLOAT *y)
 {
 	INDEX 	i;
 	FLOAT	sum, *cof;
 	
-	null( &sum);
+	bf_null( &sum);
 	for( i=coef.degree; i>0; i--)
 	{
 		cof = Address( coef) + i;
-		add( cof, &sum, &sum);
-		multiply( x, &sum, &sum);
+		bf_add( cof, &sum, &sum);
+		bf_multiply( x, &sum, &sum);
 	}
 	cof = Address( coef);
-	add( cof, &sum, y);
+	bf_add( cof, &sum, y);
 }
 
 /*  compute 2^x for x in the range -1 ... 1.
@@ -401,9 +402,9 @@ void polyeval( MULTIPOLY coef, FLOAT *x, FLOAT *y)
 	Returns y = 2^x ( works in place, both pointers can be the same)
 */
 
-void twoexp( FLOAT *x, FLOAT *y)
+void bf_twoexp( FLOAT *x, FLOAT *y)
 {
-	polyeval( twoxcoef, x, y);
+	bf_polyeval( twoxcoef, x, y);
 }
 
 /*  compute cos( x) for x in range +/- PI/2
@@ -411,20 +412,20 @@ void twoexp( FLOAT *x, FLOAT *y)
 	This is a *core* routine, no range checking!
 */
 
-void corecos(FLOAT *x, FLOAT *y)
+void bf_corecos(FLOAT *x, FLOAT *y)
 {
 	FLOAT	x2;
 	
-	divide( x, &P2, &x2);
-	multiply( &x2, &x2, &x2);
-	polyeval( coscoef, &x2, y);
+	bf_divide( x, &P2, &x2);
+	bf_multiply( &x2, &x2, &x2);
+	bf_polyeval( coscoef, &x2, y);
 }
 
 /*  convert a float to a long.  Overflow is max
 	possible result.
 */
 
-int	float_to_int( FLOAT *f)
+int	bf_float_to_int( FLOAT *f)
 {
 	FLOAT	dummy, intprt;
 	int		value;
@@ -436,10 +437,10 @@ int	float_to_int( FLOAT *f)
 			return SIGN_BIT;
 		return ~SIGN_BIT;
 	}
-	split( f, &intprt, &dummy);
+	bf_split( f, &intprt, &dummy);
 	if( intprt.mntsa.e[MS_MNTSA] & SIGN_BIT)
 	{
-		negate( &intprt);
+		bf_negate( &intprt);
 		value = -(intprt.mntsa.e[MS_MNTSA] >> ( 31 - intprt.expnt));
 	}
 	else	value = intprt.mntsa.e[MS_MNTSA] >> ( 31 - intprt.expnt);
@@ -452,7 +453,7 @@ int	float_to_int( FLOAT *f)
 	works in place.
 */
 
-int exp( FLOAT *x, FLOAT *y)
+int bf_exp( FLOAT *x, FLOAT *y)
 {
 	FLOAT	z, xp;
 	long		xpnt;
@@ -460,14 +461,14 @@ int exp( FLOAT *x, FLOAT *y)
 	
 /*  convert to base 2  */
 
-	divide( x, &ln2, &z);
+	bf_divide( x, &ln2, &z);
 	
 /*  check range is possible to do  */
 
 	if (z.expnt > 32)
 	{
 		if( x->mntsa.e[MS_MNTSA] & SIGN_BIT)
-			null(y);
+			bf_null(y);
 		else
 		{
 			OPLOOP(i) y->mntsa.e[MS_MNTSA] = ~0;
@@ -479,9 +480,9 @@ int exp( FLOAT *x, FLOAT *y)
 	
 /*  we can perform operation, send z mods 2 to core */
 
-	split(&z, &xp, &z);
-	xpnt = float_to_int( &xp);
-	twoexp( &z, y);
+	bf_split(&z, &xp, &z);
+	xpnt = bf_float_to_int( &xp);
+	bf_twoexp( &z, y);
 	
 /*  next add xpnt to exponent of y  */
 
@@ -491,7 +492,7 @@ int exp( FLOAT *x, FLOAT *y)
 
 /*  split a FLOAT into its integer and fractional parts  */
 
-void split( FLOAT *x, FLOAT *intprt, FLOAT *frac)
+void bf_split( FLOAT *x, FLOAT *intprt, FLOAT *frac)
 {
 	FLOAT	fracpart;
 	INDEX	i, signflag;
@@ -501,18 +502,18 @@ void split( FLOAT *x, FLOAT *intprt, FLOAT *frac)
 	
 	if( x->expnt <= 0)
 	{
-		null( intprt);
-		copy( x, frac);
+		bf_null( intprt);
+		bf_copy( x, frac);
 		return;
 	}
 
 /*  zero out 31 bits of ms word, then one block at a time */
 
-	copy( x, &fracpart);
+	bf_copy( x, &fracpart);
 	signflag = 0;
 	if( fracpart.mntsa.e[MS_MNTSA] & SIGN_BIT)
 	{
-		negate( &fracpart);
+		bf_negate( &fracpart);
 		signflag = 1;
 	}
 	i = MS_MNTSA;
@@ -535,10 +536,10 @@ void split( FLOAT *x, FLOAT *intprt, FLOAT *frac)
 	if( i != MS_MNTSA) mask = ~0UL >> xpchk;
 	else 	mask = ( ~0UL >> (xpchk+1));
 	fracpart.mntsa.e[i] &= mask;
-	if( signflag) negate( &fracpart);
-	normal( &fracpart);
-	subtract( x, &fracpart, intprt);
-	copy( &fracpart, frac);
+	if( signflag) bf_negate( &fracpart);
+	bf_normal( &fracpart);
+	bf_subtract( x, &fracpart, intprt);
+	bf_copy( &fracpart, frac);
 }
 
 /*  compute cosine(x) for any x.
@@ -546,49 +547,49 @@ void split( FLOAT *x, FLOAT *intprt, FLOAT *frac)
 	works in place, returns y = cos(x)
 */
 
-void cosine( FLOAT *x, FLOAT *y)
+void bf_cosine( FLOAT *x, FLOAT *y)
 {
 	FLOAT	z, PI, dummy, PI3;
 	int		cmpr;
 	
 /*  create 2*PI  */
 
-	copy( &P2, &PI);
+	bf_copy( &P2, &PI);
 	PI.expnt += 2;
 
 /*  check range of input and force modulo 2PI operation  */
 
-	cmpr = compare( x, &PI);
+	cmpr = bf_compare( x, &PI);
 	if( cmpr > 0 )
 	{
-		divide( x, &PI, &z);
-		split( &z, &dummy, &z);
-		multiply( &PI, &z, &z);
+		bf_divide( x, &PI, &z);
+		bf_split( &z, &dummy, &z);
+		bf_multiply( &PI, &z, &z);
 	}
-	else copy( x, &z);
-	if( z.mntsa.e[MS_MNTSA] & SIGN_BIT) negate( &z);
+	else bf_copy( x, &z);
+	if( z.mntsa.e[MS_MNTSA] & SIGN_BIT) bf_negate( &z);
 
 /*  z is now in range 0...2PI.  Now convert to range of core cos */
 
-	cmpr = compare( &z, &P2);
+	cmpr = bf_compare( &z, &P2);
 	if( cmpr <= 0)
 	{
-		corecos( &z, y);
+		bf_corecos( &z, y);
 		return;
 	}
 	PI.expnt--;
-	add( &PI, &P2, &PI3);	// 3 PI/2
-	cmpr = compare( &z, &PI3);
+	bf_add( &PI, &P2, &PI3);	// 3 PI/2
+	cmpr = bf_compare( &z, &PI3);
 	if( cmpr > 0)
 	{
 		PI.expnt++;
-		subtract( &PI, &z, &z);	// 2PI - x
-		corecos( &z, y);
+		bf_subtract( &PI, &z, &z);	// 2PI - x
+		bf_corecos( &z, y);
 		return;
 	}
-	subtract( &PI, &z, &z);	// PI - x
-	corecos( &z, y);
-	negate( y);
+	bf_subtract( &PI, &z, &z);	// PI - x
+	bf_corecos( &z, y);
+	bf_negate( y);
 }
 
 /*  compute sine(x) for any x.
@@ -597,26 +598,26 @@ void cosine( FLOAT *x, FLOAT *y)
 	returns y = sin(x)
 */
 
-void sine( FLOAT *x, FLOAT *y)
+void bf_sine( FLOAT *x, FLOAT *y)
 {
 	FLOAT	z, PI, dummy;
 	int		cmpr, signflag;
 	
 /*  create 2*PI and reduce x modulo 2PI signed  */
 
-	copy( &P2, &PI);
+	bf_copy( &P2, &PI);
 	PI.expnt += 2;
-	cmpr = compare( x, &PI);
+	cmpr = bf_compare( x, &PI);
 	if( cmpr > 0)
 	{
-		divide( x, &PI, &z);
-		split( &z, &dummy, &z);
-		multiply( &PI, &z, &z);
+		bf_divide( x, &PI, &z);
+		bf_split( &z, &dummy, &z);
+		bf_multiply( &PI, &z, &z);
 	}
-	else copy( x, &z);
+	else bf_copy( x, &z);
 	if( z.mntsa.e[MS_MNTSA] & SIGN_BIT)
 	{
-		negate( &z);
+		bf_negate( &z);
 		signflag = 1;
 	}
 	else signflag = 0;
@@ -626,13 +627,13 @@ void sine( FLOAT *x, FLOAT *y)
 	then subtract PI/2 to put into corecos range.
 */
 	PI.expnt--;
-	cmpr = compare( &z, &PI);
+	cmpr = bf_compare( &z, &PI);
 	if( cmpr > 0)
 	{
 		signflag ^= 1;
-		subtract( &z, &PI, &z);
+		bf_subtract( &z, &PI, &z);
 	}
-	subtract( &z, &P2, &z);
-	corecos( &z, y);
-	if( signflag) negate(y);
+	bf_subtract( &z, &P2, &z);
+	bf_corecos( &z, y);
+	if( signflag) bf_negate(y);
 }

@@ -39,7 +39,7 @@ ELEMENT StartRamIndex, StopRamIndex, IndexListInUse;
 
 /*  initialize ram allocation system  */
 
-void init_ram_space()
+void mbf_init_ram_space()
 {
 	StartRamIndex = 0;
 	StopRamIndex = 0;
@@ -69,14 +69,14 @@ void init_ram_space()
 	a crunch.
 */
 
-int get_space( MULTIPOLY *newpoly)
+int mbf_get_space( MULTIPOLY *newpoly)
 {
 	ELEMENT  need, ramindex;
 	
 	need = (newpoly->degree + 1)*(sizeof(FLOAT)/sizeof(ELEMENT));
 	if( ram_block[0].size < need)
 	{
-		crunch_ram();
+		mbf_crunch_ram();
 		if ( ram_block[0].size < need)
 		{
 			newpoly->memdex = -1;
@@ -120,7 +120,7 @@ int get_space( MULTIPOLY *newpoly)
 	NULL pointers in ram_block.
 */
 
-void  crunch_ram()
+void  mbf_crunch_ram()
 {
 	ELEMENT	index, up, down, up2, size;
 	FLOAT	*from, *to;
@@ -172,7 +172,7 @@ void  crunch_ram()
 				from = ram_block[up].start;
 				to = ram_block[index].start;
 				size = ram_block[up].size;
-				multi_copy( size, from, to);
+				mbf_multi_copy( size, from, to);
 				ram_block[up].start = to;
 				ram_block[index].start += size;
 				ram_block[down].up = up;
@@ -189,7 +189,7 @@ void  crunch_ram()
 	Mark a block of ram as free space.  
 	Nothing happens until crunch time.
 */
-void free_space( MULTIPOLY *x)
+void mbf_free_space( MULTIPOLY *x)
 {
 	ram_block[x->memdex].flag = 0;
 }
@@ -200,14 +200,14 @@ void free_space( MULTIPOLY *x)
 Note: exceptionally useful when multiplying by x^k.
 */
 
-void multi_copy( ELEMENT length, FLOAT *source, FLOAT *destination)
+void mbf_multi_copy( ELEMENT length, FLOAT *source, FLOAT *destination)
 {
 	INDEX  i;
 	
 	if (!length) return;
 	for( i=0; i<length; i++)
 	{
-		copy( source, destination);
+		mbf_copy( source, destination);
 		source++;
 		destination++;
 	}
@@ -218,18 +218,18 @@ void multi_copy( ELEMENT length, FLOAT *source, FLOAT *destination)
 	the above routine completely.
 */
 
-int multi_dup( MULTIPOLY from, MULTIPOLY *to)
+int mbf_multi_dup( MULTIPOLY from, MULTIPOLY *to)
 {
 	INDEX	i;
 	FLOAT	*f, *t;
 	
 	to->degree = from.degree;
-	if( !get_space( to)) return 0;
+	if( !mbf_get_space( to)) return 0;
 	f = Address( from);
 	t = AddressOf( to);
 	for( i=0; i<=from.degree; i++)
 	{
-		copy( f, t);
+		mbf_copy( f, t);
 		f++;
 		t++;
 	}

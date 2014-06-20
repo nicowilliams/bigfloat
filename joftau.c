@@ -4,6 +4,7 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "bigfloat.h"
 #include "multipoly.h"
 
@@ -17,20 +18,20 @@ extern FLOAT P2;
 
 	returns q = exp(2*i*PI*tau) as well as j.
 */
-void firstj( COMPLEX *tau, COMPLEX *q, COMPLEX *j)
+void bf_firstj( COMPLEX *tau, COMPLEX *q, COMPLEX *j)
 {
 	COMPLEX top, ipi;
 	
-	null_cmplx( &ipi);
-	copy( &P2, &ipi.imag);
+	bf_null_cmplx( &ipi);
+	bf_copy( &P2, &ipi.imag);
 	ipi.imag.expnt += 2;
-	multiply_cmplx( &ipi, tau, q);
-	exp_cmplx( q, q);
-	null_cmplx( &top);
-	one( &top.real);
-	divide_cmplx( &top, q, j);
-	int_to_float( 744, &top.real);
-	add_cmplx( &top, j, j);
+	bf_multiply_cmplx( &ipi, tau, q);
+	bf_exp_cmplx( q, q);
+	bf_null_cmplx( &top);
+	bf_one( &top.real);
+	bf_divide_cmplx( &top, q, j);
+	bf_int_to_float( 744, &top.real);
+	bf_add_cmplx( &top, j, j);
 }	
 
 main()
@@ -58,29 +59,29 @@ main()
 	limit = 50;
 	maxstore = limit+5;
 		
-	init_ram_space();
-	init_float();
+	bf_init_ram_space();
+	bf_init_float();
 
 /*  create table of sigma_3(n) (sum of cube of all factors
 	of n).
 */			
 	sigma3.degree = limit;
-	if( !get_space( &sigma3)) 
+	if( !bf_get_space( &sigma3)) 
 	{
 		printf("no space for that much data\n");
 		exit(0);
 	}
-	one( &o1);
-	null( &n);
+	bf_one( &o1);
+	bf_null( &n);
 	for( i=1; i<limit; i++)
 	{
-		add( &o1,  &n, &n);
-		multiply( &n, &n, &dcubed);
-		multiply( &n, &dcubed, &dcubed);
+		bf_add( &o1,  &n, &n);
+		bf_multiply( &n, &n, &dcubed);
+		bf_multiply( &n, &dcubed, &dcubed);
 		for( j=i; j<limit; j+=i)
 		{
 			offset = Address( sigma3) + j;
-			add( &dcubed, offset, offset);
+			bf_add( &dcubed, offset, offset);
 		}
 	}
 	/*  save to disk here if necessary */
@@ -97,31 +98,31 @@ main()
 */
 
 	q24.degree = 24;
-	if( !get_space( &q24))
+	if( !bf_get_space( &q24))
 	{
 		printf("no room for binomial coefficients?\n");
 		exit(0);
 	}
 	coef = Address(q24);
-	int_to_float( 1, coef);
-	int_to_float( 24, &bctop);
-	int_to_float( 1, &bcbottom);
+	bf_int_to_float( 1, coef);
+	bf_int_to_float( 24, &bctop);
+	bf_int_to_float( 1, &bcbottom);
 	for( i=1; i<=24; i++)
 	{
 		prevc = coef; 
 		coef = Address(q24) + i;
-		multiply( prevc, &bctop, coef);
-		divide( coef, &bcbottom, coef);
-		negate( coef);
-		round( coef, coef);
+		bf_multiply( prevc, &bctop, coef);
+		bf_divide( coef, &bcbottom, coef);
+		bf_negate( coef);
+		bf_round( coef, coef);
 /*		printf("i= %d\n", i);
 		printfloat("  coef =", coef);
 
 /*  decrement top and increment bottom for next term
 	in binomial expansion */
 
-		subtract( &bctop, &o1, &bctop);
-		add( &o1, &bcbottom, &bcbottom);
+		bf_subtract( &bctop, &o1, &bctop);
+		bf_add( &o1, &bcbottom, &bcbottom);
 	}
 
 /*  now compute Ramanujan's tau.
@@ -134,19 +135,19 @@ main()
 
 	tau1.degree = maxstore;
 	tau2.degree = maxstore;
-	if( !get_space( &tau1))
+	if( !bf_get_space( &tau1))
 	{
 		printf("can't allocate first tau block.\n");
 		exit(0);
 	}
-	if( !get_space( &tau2))
+	if( !bf_get_space( &tau2))
 	{
 		printf("can't allocate second tau block.\n");
 		exit(0);
 	}
 	coef = Address( q24);
 	tnew = Address( tau1);
-	multi_copy( 25, coef, tnew);
+	bf_multi_copy( 25, coef, tnew);
 	k = 2;
 	while( k<maxstore )  /*  loop over products  */
 	{
@@ -154,7 +155,7 @@ main()
 
 		prevc = Address( tau1);
 		tnew = Address( tau2);
-		multi_copy( maxstore, prevc, tnew);
+		bf_multi_copy( maxstore, prevc, tnew);
 
 /*  for each coefficient in 24 term product of next term,
 	multiply by every term in previous product and sum
@@ -170,9 +171,9 @@ main()
 				if( j + shift > maxstore) continue;
 				tsubj = Address( tau1) + j;
 				tnew = Address( tau2) + j + shift;
-				multiply( tsubj, coef, &bctop);
-				add( &bctop, tnew, tnew);
-				round( tnew, tnew);
+				bf_multiply( tsubj, coef, &bctop);
+				bf_add( &bctop, tnew, tnew);
+				bf_round( tnew, tnew);
 			}
 		}
 		k++;
@@ -182,7 +183,7 @@ main()
 		if( k>maxstore) break;
 		prevc = Address( tau2);
 		tnew = Address( tau1);
-		multi_copy( maxstore, prevc, tnew);
+		bf_multi_copy( maxstore, prevc, tnew);
 		for( i=1; i<=24; i++)
 		{
 			coef = Address(q24) + i;
@@ -193,9 +194,9 @@ main()
 				if( j + shift > maxstore) continue;
 				tsubj = Address( tau2) + j;
 				tnew = Address( tau1) + j + shift;
-				multiply( tsubj, coef, &bctop);
-				add( &bctop, tnew, tnew);
-				round( tnew, tnew);
+				bf_multiply( tsubj, coef, &bctop);
+				bf_add( &bctop, tnew, tnew);
+				bf_round( tnew, tnew);
 			}
 		}
 		k++;
@@ -204,21 +205,21 @@ main()
 /*  compute top polynomial of joftau 
 	 (1 + 240*sum(sigma3(n)*q^n))^3 */
 
-	multi_dup( sigma3, &joftop);
+	bf_multi_dup( sigma3, &joftop);
 	coef = Address( joftop);
-	int_to_float( 1, coef);
-	int_to_float( 240, &bctop);
+	bf_int_to_float( 1, coef);
+	bf_int_to_float( 240, &bctop);
 	for( i=1; i<limit; i++)
 	{
 		coef = Address( joftop) + i;
-		multiply( &bctop, coef, coef);
+		bf_multiply( &bctop, coef, coef);
 	}
-	power_mul( joftop, joftop, &joftau);  
-	power_mul( joftop, joftau, &joftop);
+	bf_power_mul( joftop, joftop, &joftau);  
+	bf_power_mul( joftop, joftau, &joftop);
 
 /*  finally compute joftau coefficients */
 
-	power_div( joftop, tau1, &joftau);
+	bf_power_div( joftop, tau1, &joftau);
 /*	for( i=0; i<limit; i++)
 	{
 		tsubj = Address( joftau) + i;
@@ -242,59 +243,59 @@ main()
 
 /*  create an arc along bottom of F  */
 
-	copy( &P2, &theta);
+	bf_copy( &P2, &theta);
 	theta.expnt += 2;  // create 2PI/3
-	int_to_float( 3, &n);
-	divide( &theta, &n, &theta);
-	copy( &theta, &dtheta);
+	bf_int_to_float( 3, &n);
+	bf_divide( &theta, &n, &theta);
+	bf_copy( &theta, &dtheta);
 	dtheta.expnt--;		// create PI/3/511
-	int_to_float( gridsize-1, &n);
-	divide( &dtheta, &n, &dtheta);
+	bf_int_to_float( gridsize-1, &n);
+	bf_divide( &dtheta, &n, &dtheta);
 	for( i=0; i<gridsize; i++)
 	{
-		cosine( &theta, &arc[i].real);
-		sine( &theta, &arc[i].imag);
-		subtract( &theta, &dtheta, &theta);
+		bf_cosine( &theta, &arc[i].real);
+		bf_sine( &theta, &arc[i].imag);
+		bf_subtract( &theta, &dtheta, &theta);
 	}
 
 /*  Move arc up F, and find j(tau) for each point  */
 
-	int_to_float( 10, &bctop);
-	int_to_float( gridsize, &n);
-	divide( &bctop, &n, &bctop);  // upper limit of F
+	bf_int_to_float( 10, &bctop);
+	bf_int_to_float( gridsize, &n);
+	bf_divide( &bctop, &n, &bctop);  // upper limit of F
 	for( i=0; i<gridsize; i++)
 	{
 		printf("i= %d\n", i);
-		int_to_float(i, &n);
-		multiply( &bctop, &n, &tau.imag);
-		null( &tau.real);
+		bf_int_to_float(i, &n);
+		bf_multiply( &bctop, &n, &tau.imag);
+		bf_null( &tau.real);
 		datablock.y = i;
 		for( j=0; j<gridsize; j++)
 		{
 			datablock.x = j;
 
-			add_cmplx( &tau, &arc[j], &datablock.start);
+			bf_add_cmplx( &tau, &arc[j], &datablock.start);
 //			print_cmplx("data block start", &datablock.start);
 			
 /*  compute j(tau) for this point.  Note power of q = index - 1 */
 
-			firstj( &datablock.start, &q, &jtau);
+			bf_firstj( &datablock.start, &q, &jtau);
 //			print_cmplx("q = exp(2 i PI tau)", &q);
 //			print_cmplx("first terms", &jtau);
-			copy_cmplx( &q, &qn);
+			bf_copy_cmplx( &q, &qn);
 			for( k=2; k<limit; k++)
 			{
 				offset = Address( joftau) + k;
-				multiply( offset, &qn.real, &temp.real);
-				multiply( offset, &qn.imag, &temp.imag);
-				add_cmplx( &temp, &jtau, &jtau);
-				multiply_cmplx( &q, &qn, &qn);
+				bf_multiply( offset, &qn.real, &temp.real);
+				bf_multiply( offset, &qn.imag, &temp.imag);
+				bf_add_cmplx( &temp, &jtau, &jtau);
+				bf_multiply_cmplx( &q, &qn, &qn);
 			}
 			
 /*  save data point to disk  */
 
 //			print_cmplx("j(tau) = ", &jtau);
-			copy_cmplx( &jtau, &datablock.jt);
+			bf_copy_cmplx( &jtau, &datablock.jt);
 			if( fwrite(  &datablock, sizeof( datablock), 1, svplot) <= 0)
 				printf("can't write to disk\n");
 		}

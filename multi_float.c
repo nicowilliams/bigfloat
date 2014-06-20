@@ -22,7 +22,7 @@ extern RAMDATA ram_block[];
 	Returns 1 on success, 0 on failure to create C.
 */
 
-int power_add( MULTIPOLY A, MULTIPOLY B, MULTIPOLY *C)
+int mbf_power_add( MULTIPOLY A, MULTIPOLY B, MULTIPOLY *C)
 {
 	ELEMENT		i, j, big, small;
 	MULTIPOLY	result;
@@ -41,7 +41,7 @@ int power_add( MULTIPOLY A, MULTIPOLY B, MULTIPOLY *C)
 		big = B.degree;
 	}
 	result.degree = big;
-	if (!get_space( &result)) return 0;
+	if (!mbf_get_space( &result)) return 0;
 
 /*  now add the shorter length amounts together  */
 
@@ -50,21 +50,21 @@ int power_add( MULTIPOLY A, MULTIPOLY B, MULTIPOLY *C)
 	Bptr = Address( B);
 	for( i=0; i<= small; i++)
 	{
-		add( Aptr, Bptr, Result);
+		mbf_add( Aptr, Bptr, Result);
 		Result++;
 		Aptr++;
 		Bptr++;
 	}
 
 	if( A.degree == big)
-		multi_copy( big - small, Aptr, Result);
+		mbf_multi_copy( big - small, Aptr, Result);
 	else
-		multi_copy( big - small, Bptr, Result);
+		mbf_multi_copy( big - small, Bptr, Result);
 				
 /*  take care of memory management  */
 
-	if ( A.memdex == C->memdex ) free_space( &A);
-	if ( B.memdex == C->memdex ) free_space( &B);
+	if ( A.memdex == C->memdex ) mbf_free_space( &A);
+	if ( B.memdex == C->memdex ) mbf_free_space( &B);
 	C->degree = result.degree;
 	C->memdex = result.memdex;
 	return 1;
@@ -76,7 +76,7 @@ int power_add( MULTIPOLY A, MULTIPOLY B, MULTIPOLY *C)
 	returns 0 if C can't be allocated.
 */
 
-int power_mul( MULTIPOLY A, MULTIPOLY B, MULTIPOLY *C)
+int mbf_power_mul( MULTIPOLY A, MULTIPOLY B, MULTIPOLY *C)
 {
 	ELEMENT		i, k;
 	MULTIPOLY	result;
@@ -89,26 +89,26 @@ int power_mul( MULTIPOLY A, MULTIPOLY B, MULTIPOLY *C)
 		result.degree = A.degree;
 	else
 		result.degree = B.degree;
-	if ( !get_space( &result) ) return 0;
+	if ( !mbf_get_space( &result) ) return 0;
 	for( i=0; i<=result.degree; i++)
 	{
 		Result = Address(result) + i;
-		null( Result);
+		mbf_null( Result);
 		for( k=0; k<=i; k++)
 		{
 			if( k <= A.degree) Aptr = Address( A) + k;
 			else continue;
 			if( i-k < B.degree) Bptr = Address( B) + i - k;
 			else continue;
-			multiply( Aptr, Bptr, &temp);
-			add( &temp, Result, Result);
+			mbf_multiply( Aptr, Bptr, &temp);
+			mbf_add( &temp, Result, Result);
 		}
 	}
 	
 /*  take care of memory management  */
 
-	if (A.memdex == C->memdex) free_space( &A);
-	if (B.memdex == C->memdex) free_space( &B);
+	if (A.memdex == C->memdex) mbf_free_space( &A);
+	if (B.memdex == C->memdex) mbf_free_space( &B);
 	C->memdex = result.memdex;
 	C->degree = result.degree;
 	return 1;
@@ -119,7 +119,7 @@ int power_mul( MULTIPOLY A, MULTIPOLY B, MULTIPOLY *C)
 	otherwise.
 */
 
-ELEMENT zero_check( FLOAT *z)
+ELEMENT mbf_zero_check( FLOAT *z)
 {
 	INDEX	i;
 	
@@ -136,7 +136,7 @@ ELEMENT zero_check( FLOAT *z)
 	returns 1 if ok, 0 if no space for C
 */
 
-int power_div( MULTIPOLY A, MULTIPOLY B,  MULTIPOLY *C)
+int mbf_power_div( MULTIPOLY A, MULTIPOLY B,  MULTIPOLY *C)
 {
 	ELEMENT		n, k;
 	FLOAT		temp, *Result, *Aptr, *Bptr;
@@ -145,20 +145,20 @@ int power_div( MULTIPOLY A, MULTIPOLY B,  MULTIPOLY *C)
 /*  check to see if attempting to divide by 0  */
 
 	Bptr = Address( B);
-	if (!zero_check(Bptr)) return (0);
+	if (!mbf_zero_check(Bptr)) return (0);
 
 /*  create space for result  */
 
 	if( A.degree < B.degree) result.degree = A.degree;
 	else result.degree = B.degree;
-	if( !get_space(&result)) return 0;
+	if( !mbf_get_space(&result)) return 0;
 
 /*  do first term  */
 
 	Aptr = Address(A);
 	Bptr = Address( B);
 	Result = Address( result);
-	divide( Aptr, Bptr, Result);
+	mbf_divide( Aptr, Bptr, Result);
 
 /*  do rest of terms  */
 
@@ -169,19 +169,19 @@ int power_div( MULTIPOLY A, MULTIPOLY B,  MULTIPOLY *C)
 		{
 			Aptr = Address( result) +k;
 			Bptr = Address( B) + n - k;
-			multiply( Aptr, Bptr, &temp);
-			add( &temp, Result, Result);
+			mbf_multiply( Aptr, Bptr, &temp);
+			mbf_add( &temp, Result, Result);
 		}
 		Aptr = Address( A) + n;
-		subtract( Aptr, Result, Result);
+		mbf_subtract( Aptr, Result, Result);
 		Bptr = Address( B);
-		divide( Result, Bptr, Result);
+		mbf_divide( Result, Bptr, Result);
 	}
 		
 /*  take care of memory management  */
 
-	if (A.memdex == C->memdex) free_space( &A);
-	if (B.memdex == C->memdex) free_space( &B);
+	if (A.memdex == C->memdex) mbf_free_space( &A);
+	if (B.memdex == C->memdex) mbf_free_space( &B);
 	C->memdex = result.memdex;
 	C->degree = result.degree;
 	return 1;
@@ -200,7 +200,7 @@ int power_div( MULTIPOLY A, MULTIPOLY B,  MULTIPOLY *C)
 	Returns 1 on success, 0 on failure to create C.
 */
 
-int multi_add( MULTIPOLY A, MULTIPOLY B, MULTIPOLY *C)
+int mbf_multi_add( MULTIPOLY A, MULTIPOLY B, MULTIPOLY *C)
 {
 	ELEMENT		i, j;
 	MULTIPOLY	shortpoly, result, longpoly;
@@ -223,7 +223,7 @@ int multi_add( MULTIPOLY A, MULTIPOLY B, MULTIPOLY *C)
 		longpoly.memdex = B.memdex;
 	}
 	result.degree = longpoly.degree;
-	if (!get_space( &result)) return 0;
+	if (!mbf_get_space( &result)) return 0;
 
 /*  now add the shorter length amounts together  */
 
@@ -232,7 +232,7 @@ int multi_add( MULTIPOLY A, MULTIPOLY B, MULTIPOLY *C)
 	Bptr = Address( B);
 	for( i=0; i<= shortpoly.degree; i++)
 	{
-		add(  Aptr, Bptr, Result);
+		mbf_add(  Aptr, Bptr, Result);
 		Result++;
 		Aptr++;
 		Bptr++;
@@ -242,16 +242,16 @@ int multi_add( MULTIPOLY A, MULTIPOLY B, MULTIPOLY *C)
 
 	Result = Address(result) + shortpoly.degree + 1;
 	Aptr = Address(longpoly) + shortpoly.degree + 1;
-	multi_copy( longpoly.degree - shortpoly.degree, Aptr, Result);
+	mbf_multi_copy( longpoly.degree - shortpoly.degree, Aptr, Result);
 	Result = Address(result);
 	while( result.degree)
-		if( !zero_check( &Result[result.degree])) result.degree--;
+		if( !mbf_zero_check( &Result[result.degree])) result.degree--;
 		else break;
 		
 /*  take care of memory management  */
 
-	if ( A.memdex == C->memdex ) free_space( &A);
-	if ( B.memdex == C->memdex ) free_space( &B);
+	if ( A.memdex == C->memdex ) mbf_free_space( &A);
+	if ( B.memdex == C->memdex ) mbf_free_space( &B);
 	C->degree = result.degree;
 	C->memdex = result.memdex;
 	return 1;
@@ -262,21 +262,21 @@ int multi_add( MULTIPOLY A, MULTIPOLY B, MULTIPOLY *C)
 	Simplest way to deal with it.
 */
 
-int multi_sub( MULTIPOLY A, MULTIPOLY B, MULTIPOLY *C)
+int mbf_multi_sub( MULTIPOLY A, MULTIPOLY B, MULTIPOLY *C)
 {
 	INDEX		i;
 	FLOAT		*ptr;
 	MULTIPOLY	temp;
 	
-	multi_dup( B, &temp);
+	mbf_multi_dup( B, &temp);
 	 
 	for( i=0; i<=temp.degree; i++)
 	{
 		ptr = Address(temp) + i;
-		negate( ptr);
+		mbf_negate( ptr);
 	}
-	multi_add( A, temp, C);
-	free_space( &temp);	
+	mbf_multi_add( A, temp, C);
+	mbf_free_space( &temp);	
 }
 
 /*  Multiply two multivariate polynomials. Uses Knuth's construction
@@ -285,7 +285,7 @@ int multi_sub( MULTIPOLY A, MULTIPOLY B, MULTIPOLY *C)
 	returns 0 if C can't be allocated.
 */
 
-int multi_mul( MULTIPOLY A, MULTIPOLY B, MULTIPOLY *C)
+int mbf_multi_mul( MULTIPOLY A, MULTIPOLY B, MULTIPOLY *C)
 {
 	ELEMENT		i, j, k;
 	MULTIPOLY	shortmulti, longmulti, result;
@@ -295,7 +295,7 @@ int multi_mul( MULTIPOLY A, MULTIPOLY B, MULTIPOLY *C)
 /*  create space for result using sum of degrees of source polynomials */
 
 	result.degree = A.degree + B.degree;
-	if ( !get_space( &result) ) return 0;
+	if ( !mbf_get_space( &result) ) return 0;
 	if (A.degree > B.degree)
 	{
 		longmulti.memdex = A.memdex;
@@ -313,54 +313,54 @@ int multi_mul( MULTIPOLY A, MULTIPOLY B, MULTIPOLY *C)
 	for( k=0; k<shortmulti.degree; k++)
 	{
 		Result = Address(result) + k;
-		null( Result);
+		mbf_null( Result);
 		for( i=0; i<=k; i++)
 		{
 			j = k - i;
 			Short = Address( shortmulti) + i;
 			Long = Address( longmulti) + j;
-			multiply(  Short, Long,  &temp);
+			mbf_multiply(  Short, Long,  &temp);
 			Result = Address( result) + k;
-			add( Result, &temp, Result);
+			mbf_add( Result, &temp, Result);
 		}
 	}
 	for( k=shortmulti.degree; k<longmulti.degree; k++)
 	{
 		Result = Address(result) + k;
-		null( Result);
+		mbf_null( Result);
 		for( i=0; i<=shortmulti.degree; i++)
 		{
 			j = k - i;
 			Short = Address(shortmulti) + i;
 			Long = Address( longmulti) + j;
-			multiply( Short,  Long, &temp);
+			mbf_multiply( Short,  Long, &temp);
 			Result = Address( result) + k;
-			add( Result, &temp, Result);
+			mbf_add( Result, &temp, Result);
 		}
 	}
 	for( k=longmulti.degree; k<=result.degree; k++)
 	{
 		Result = Address( result) + k;
-		null( Result);
+		mbf_null( Result);
 		for( i = k-longmulti.degree; i <= shortmulti.degree;  i++)
 		{
 			j = k - i;
 			Short = Address( shortmulti) + i;
 			Long = Address( longmulti) + j;
-			multiply( Short, Long, &temp);
+			mbf_multiply( Short, Long, &temp);
 			Result = Address( result) + k;
-			add( Result, &temp, Result);
+			mbf_add( Result, &temp, Result);
 		}
 	}
 	Result = Address( result);
 	while( result.degree)
-		if( !zero_check( &Result[result.degree])) result.degree--;
+		if( !mbf_zero_check( &Result[result.degree])) result.degree--;
 		else break;
 	
 /*  take care of memory management  */
 
-	if (A.memdex == C->memdex) free_space( &A);
-	if (B.memdex == C->memdex) free_space( &B);
+	if (A.memdex == C->memdex) mbf_free_space( &A);
+	if (B.memdex == C->memdex) mbf_free_space( &B);
 	C->memdex = result.memdex;
 	C->degree = result.degree;
 	return 1;

@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include "bigfloat.h"
 
-char digitof( FLOAT *frac);
+char bf_digitof( FLOAT *frac);
 
 double logbase10of2 = 0.30102999566398119521;
 
@@ -24,7 +24,7 @@ double logbase10of2 = 0.30102999566398119521;
 		     1 if it can.
 */
 
-int ascii_to_float( char *instring, FLOAT *outnum)
+int bf_ascii_to_float( char *instring, FLOAT *outnum)
 {
 	int	signflag, exponent;
 	char	nextchar;
@@ -40,7 +40,7 @@ int ascii_to_float( char *instring, FLOAT *outnum)
 	If blank after the E, exponent assumed 0.
 */
 	signflag = 0;
-	null( outnum);
+	bf_null( outnum);
 	nextchar = *instring++;
 	if ( nextchar == '-')
 	{
@@ -76,7 +76,7 @@ expnt:
 		nextchar = *instring++;
 		if( !nextchar) return 0;
 	}
-	null( &ten);
+	bf_null( &ten);
 	ten.expnt = 4;
 	ten.mntsa.e[MS_MNTSA] = 0x50000000;
 	signflag = 0;
@@ -88,12 +88,12 @@ expnt:
 	if ( nextchar == '+' ) nextchar = *instring++;
 	while ( nextchar >= '0' && nextchar <= '9')
 	{
-		multiply( outnum, &ten, outnum);
-		null ( &digit);
+		bf_multiply( outnum, &ten, outnum);
+		bf_null ( &digit);
 		digit.expnt = 31;
 		digit.mntsa.e[MS_MNTSA] = nextchar & 0xf;
-		normal ( &digit);
-		add( &digit, outnum, outnum);
+		bf_normal ( &digit);
+		bf_add( &digit, outnum, outnum);
 		nextchar = *instring++;
 	}
 	if ( !nextchar ) goto scale;
@@ -102,21 +102,21 @@ expnt:
 	digits we've collected.  You'd have to have a lot of digits to underflow!!
 */
 	nextchar = *instring++;
-	null( &scale);
+	bf_null( &scale);
 	scale.expnt = 1;
 	scale.mntsa.e[MS_MNTSA] = 0x40000000;
-	divide( &scale, &ten, &scale);
+	bf_divide( &scale, &ten, &scale);
 	while (nextchar)
 	{
 		if( nextchar >= '0' && nextchar <= '9')
 		{
-			null ( &digit);
+			bf_null ( &digit);
 			digit.expnt = 31;
 			digit.mntsa.e[MS_MNTSA] = nextchar & 0xf;
-			normal ( &digit);
-			multiply( &digit, &scale, &digit);
-			add( &digit, outnum, outnum);
-			divide( &scale, &ten, &scale);
+			bf_normal ( &digit);
+			bf_multiply( &digit, &scale, &digit);
+			bf_add( &digit, outnum, outnum);
+			bf_divide( &scale, &ten, &scale);
 		}
 		nextchar = *instring++;
 	}
@@ -132,7 +132,7 @@ scale:
 		{
 			while (exponent)
 			{
-				divide( outnum, &ten, outnum);
+				bf_divide( outnum, &ten, outnum);
 				exponent++;
 			}
 		}
@@ -140,12 +140,12 @@ scale:
 		{
 			while ( exponent )
 			{
-				multiply( outnum, &ten, outnum);
+				bf_multiply( outnum, &ten, outnum);
 				exponent--;
 			}
 		}
 	}
-	if ( signflag ) negate( outnum);
+	if ( signflag ) bf_negate( outnum);
 	return 1;
 }
 
@@ -162,7 +162,7 @@ where s is + or -, \b is a space
 	Conversion based on Knuth, "Radix Conversion" in Seminumerical
 */
 
-void float_to_ascii( FLOAT *numbr, char *outstring)
+void bf_float_to_ascii( FLOAT *numbr, char *outstring)
 {
 	long exponent, exp10;
 	FLOAT ten, fraction, scale;
@@ -173,7 +173,7 @@ void float_to_ascii( FLOAT *numbr, char *outstring)
 	
 /*  Make this a macro or subroutine?  */
 
-	null( &ten);
+	bf_null( &ten);
 	ten.expnt = 4;
 	ten.mntsa.e[MS_MNTSA] = 0x50000000;
 
@@ -185,7 +185,7 @@ void float_to_ascii( FLOAT *numbr, char *outstring)
 /*  if number doesn't need an exponent, skip exponent phase  */
 
 	exponent = numbr->expnt;
-	copy( numbr, &fraction);
+	bf_copy( numbr, &fraction);
 	if( (exponent < -3) || (exponent > 3))
 	{
 		if ( exponent < -3)
@@ -208,18 +208,18 @@ void float_to_ascii( FLOAT *numbr, char *outstring)
 
 		lastbit = 0x40000000;
 		while  (! (lastbit & exp10) && lastbit) lastbit >>= 1;
-		one( &scale);
+		bf_one( &scale);
 
 /*  compute scale = 10^exp10, in binary  */
  
 	 	for (mask=1;  mask < lastbit; mask <<= 1 )
 	 	{
-	 		if (mask & exp10) multiply( &scale, &ten, &scale);
-	 		multiply( &ten, &ten, &ten);    // square power of 10
+	 		if (mask & exp10) bf_multiply( &scale, &ten, &scale);
+	 		bf_multiply( &ten, &ten, &ten);    // square power of 10
 	 	}
-	 	multiply( &scale, &ten, &scale);
-	 	if ( signflag) multiply( &scale, numbr, &fraction);
-	 	else divide( numbr, &scale, &fraction);
+	 	bf_multiply( &scale, &ten, &scale);
+	 	if ( signflag) bf_multiply( &scale, numbr, &fraction);
+	 	else bf_divide( numbr, &scale, &fraction);
 	 
  /*  now we have number converted to fraction in range .125+ to 8-
  	We also know the binary representation of the decimal
@@ -239,7 +239,7 @@ void float_to_ascii( FLOAT *numbr, char *outstring)
 	 
 /*  Make this a macro or subroutine?  */
 
-	null( &ten);
+	bf_null( &ten);
 	ten.expnt = 4;
 	ten.mntsa.e[MS_MNTSA] = 0x50000000;
 
@@ -249,24 +249,24 @@ void float_to_ascii( FLOAT *numbr, char *outstring)
 	*digit++ = ' ';
 	if( fraction.mntsa.e[MS_MNTSA] & SIGN_BIT)
 	{
-		negate( &fraction);
+		bf_negate( &fraction);
 		*digit++ = '-';
 	}
 	else *digit++ = '+';
 	
 /*  spit out first digit then decimal point  */
 
-	*digit++ = digitof( &fraction);
+	*digit++ = bf_digitof( &fraction);
 	*digit++ = '.';
 
 /*  multiply result by 10 and output next decimal digit.  
 	go till number is gone.
 */
 	i=0;
-	while( !iszero( &fraction) & i<80)
+	while( !bf_iszero( &fraction) & i<80)
 	{
-		multiply( &fraction, &ten, &fraction);
-		*digit++ = digitof( &fraction);
+		bf_multiply( &fraction, &ten, &fraction);
+		*digit++ = bf_digitof( &fraction);
 		i++;
 	}
 	*digit++ = 0;
@@ -277,7 +277,7 @@ void float_to_ascii( FLOAT *numbr, char *outstring)
 	Output is normalized back to a fraction.
 */
 
-char digitof( FLOAT *frac)
+char bf_digitof( FLOAT *frac)
 {
 	char num;
 	unsigned long mask;
@@ -287,7 +287,7 @@ char digitof( FLOAT *frac)
 	mask = ~0 << xp2;
 	num = (( mask & frac->mntsa.e[MS_MNTSA]) >> xp2);
 	frac->mntsa.e[MS_MNTSA] &= ~mask;
-	normal( frac);
+	bf_normal( frac);
 	return num | '0';
 }
 
@@ -299,7 +299,7 @@ char digitof( FLOAT *frac)
 	With 32 bit exponent, it's insane to have soft 0.
 */
 
-int iszero( FLOAT *x)
+int bf_iszero( FLOAT *x)
 {
 	if( x->mntsa.e[MS_MNTSA] ) return 0;
 	return 1;
@@ -307,21 +307,21 @@ int iszero( FLOAT *x)
 
 /*  print a text string and float.  For debugging mostly.  */
 
-void printfloat( char *string, FLOAT *numbr)
+void bf_printfloat( char *string, FLOAT *numbr)
 {
 	char	numstrng[128];
 	
 	printf("%s\n", string);
-	float_to_ascii( numbr, numstrng);
+	bf_float_to_ascii( numbr, numstrng);
 	printf("%s\n", numstrng);
 }
 
 /*  print complex number to stdout  */
 
-void print_cmplx( char *string, COMPLEX *num)
+void bf_print_cmplx( char *string, COMPLEX *num)
 {
 	printf("%s\n", string);
-	printfloat("  real part is", &num->real);
-	printfloat("  imaginary part is", &num->imag);
+	bf_printfloat("  real part is", &num->real);
+	bf_printfloat("  imaginary part is", &num->imag);
 	printf("\n");
 }
