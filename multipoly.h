@@ -1,3 +1,6 @@
+
+#include "bigfloat.h"
+
 typedef struct
 {
 	ELEMENT		degree;		/*  degree of polynomial  */
