@@ -22,18 +22,22 @@ typedef struct {
 	ELEMENT		hw[4*MAXLONG];
 }  BIGINT;
 
-void bi_int_null();
-void bi_int_copy();
-void bi_field_to_int();
-void bi_int_to_field();
-void bi_int_neg();
-void bi_int_add();
-void bi_int_sub();
-void bi_int_mul();
-void bi_int_div();
-void bi_ascii_to_bigint();
-void bi_bigint_to_ascii();
-void bi_int_gcd();
-void bi_mod_exp();
-void bi_mod_inv();
-void bi_int_div2();
+/* Function prototypes produced by cproto(1) */
+
+/* bigint.c */
+void bi_int_null(BIGINT *);
+void bi_int_copy(BIGINT *, BIGINT *);
+void bi_field_to_int(FIELD2N *, BIGINT *);
+void bi_int_to_field(BIGINT *, FIELD2N *);
+void bi_int_neg(BIGINT *);
+void bi_int_add(BIGINT *, BIGINT *, BIGINT *);
+void bi_int_sub(BIGINT *, BIGINT *, BIGINT *);
+void bi_int_mul(BIGINT *, BIGINT *, BIGINT *);
+void bi_int_div(BIGINT *, BIGINT *, BIGINT *, BIGINT *);
+void bi_ascii_to_bigint(char *, BIGINT *);
+void bi_bigint_to_ascii(BIGINT *, char *);
+/* int_functions.c */
+void bi_int_div2(BIGINT *);
+void bi_int_gcd(BIGINT *, BIGINT *, BIGINT *);
+void bi_mod_exp(BIGINT *, BIGINT *, BIGINT *, BIGINT *);
+void bi_mod_inv(BIGINT *, BIGINT *, BIGINT *);
